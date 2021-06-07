@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     } else {
       std::cout << "[" << i << "] " << std::endl;
       printf("[len=%d]", len);
-      for (i = 0; i < len; i++) {
+      for (int i = 0; i < len; i++) {
         printf("%02X", (unsigned char)(buf[i]));
       }
       printf("\n");
