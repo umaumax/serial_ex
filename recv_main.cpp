@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <thread>
@@ -33,8 +34,10 @@ bool recv_serial(std::string serial_port, speed_t baudrate, int read_num = -1) {
   }
 
   memset(&tio, 0, sizeof(tio));
-  tio.c_cflag    = CREAD | CLOCAL | CS8;
-  tio.c_iflag    = IGNPAR;
+  tio.c_cflag = CREAD | CLOCAL | CS8;
+  // tio.c_cflag = CREAD | CLOCAL | CS8 | PARENB; // add parity to output and check input parity
+  tio.c_iflag = IGNPAR;
+  // tio.c_iflag    = IXOFF; // with software flow control of input
   tio.c_cc[VMIN] = 1;
 
   ret = cfsetspeed(&tio, baudrate);
@@ -55,6 +58,7 @@ bool recv_serial(std::string serial_port, speed_t baudrate, int read_num = -1) {
     return false;
   }
 
+  std::ofstream output_file("out.bin", std::ios::binary);
   int len;
   char buf[256];
   for (int i = 0; read_num == -1 || i < read_num; i++) {
@@ -71,19 +75,24 @@ bool recv_serial(std::string serial_port, speed_t baudrate, int read_num = -1) {
     } else {
       std::cout << "[" << i << "] " << std::endl;
       printf("[len=%d]", len);
-      for (int i = 0; i < len; i++) {
-        printf("%02X", (unsigned char)(buf[i]));
-      }
+      // for (int i = 0; i < len; i++) {
+      // printf("%02X", (unsigned char)(buf[i]));
+      // }
       printf("\n");
-      std::cout << std::string(&buf[0], len) << std::endl;
+      // std::cout << std::string(&buf[0], len) << std::endl;
+      output_file.write(buf, static_cast<std::streamsize>(len));
+      if (output_file.bad()) {
+        std::cerr << "error to write file" << std::endl;
+      }
+      output_file.flush();
     }
 
     // echo back
-    int ret = write(fd, buf, len);
-    if (ret == -1) {
-      std::cerr << "failed write:" << std::strerror(errno) << std::endl;
-      return false;
-    }
+    // int ret = write(fd, buf, len);
+    // if (ret == -1) {
+    // std::cerr << "failed write:" << std::strerror(errno) << std::endl;
+    // return false;
+    // }
   }
 
   // pop previous saved setting
